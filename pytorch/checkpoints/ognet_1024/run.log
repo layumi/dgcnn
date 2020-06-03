@@ -1,0 +1,7 @@
+Namespace(batch_size=32, dataset='modelnet40', dropout=0.5, emb_dims=1024, epochs=250, eval=False, exp_name='ognet_1024', k=20, lr=0.001, model='ognet', model_path='', momentum=0.9, no_cuda=False, num_points=1024, seed=1, test_batch_size=16, use_sgd=True)
+Using GPU : 0 from 2 devices
+Namespace(batch_size=32, dataset='modelnet40', dropout=0.5, emb_dims=1024, epochs=250, eval=False, exp_name='ognet_1024', k=20, lr=0.001, model='ognet', model_path='', momentum=0.9, no_cuda=False, num_points=1024, seed=1, test_batch_size=16, use_sgd=True)
+Using GPU : 0 from 2 devices
+Namespace(batch_size=32, dataset='modelnet40', dropout=0.5, emb_dims=1024, epochs=250, eval=False, exp_name='ognet_1024', k=20, lr=0.001, model='ognet', model_path='', momentum=0.9, no_cuda=False, num_points=1024, seed=1, test_batch_size=16, use_sgd=True)
+Using GPU : 0 from 2 devices
+Train 0, loss: 7.570513, train acc: 0.071967, train avg acc: 0.038301
