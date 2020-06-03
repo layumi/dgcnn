@@ -1,0 +1,2 @@
+Namespace(batch_size=32, dataset='modelnet40', dropout=0.5, emb_dims=1024, epochs=250, eval=False, exp_name='dgcnn_2048', k=40, lr=0.001, model='dgcnn', model_path='', momentum=0.9, no_cuda=False, num_points=2048, seed=1, test_batch_size=16, use_sgd=True)
+Using GPU : 0 from 1 devices
