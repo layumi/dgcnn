@@ -1,3 +1,19 @@
+# OG-Net
+```
+cd pytorch
+```
+## Train 
+```
+python main.py --exp_name=ognet_1024 --model=ognet
+```
+
+## Evaluate
+```
+python main.py --exp_name=ognet_1024 --model=ognet  --eval=True  --model_path=checkpoints/ognet_1024/models/model.t7
+```
+
+Result is 92.02 / 88.84
+
 # Dynamic Graph CNN for Learning on Point Clouds
 We propose a new neural network module dubbed EdgeConv suitable for CNN-based high-level tasks on point clouds including classification and segmentation. EdgeConv is differentiable and can be plugged into existing architectures.
 
