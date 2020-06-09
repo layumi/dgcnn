@@ -1,8 +1,17 @@
 # OG-Net
 ```
 cd pytorch
+```
+## Train 
+```
 python main.py --exp_name=ognet_1024 --model=ognet
 ```
+
+## Evaluate
+```
+python main.py --exp_name=ognet_1024 --model=ognet  --eval=True  --model_path=checkpoints/ognet_1024/models/model.t7
+```
+
 Result is 92.02 / 88.84
 
 # Dynamic Graph CNN for Learning on Point Clouds
