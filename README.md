@@ -1,4 +1,5 @@
 # OG-Net
+I have modified code from DGCNN https://github.com/WangYueFt/dgcnn
 ```
 cd pytorch
 ```
