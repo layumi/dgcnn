@@ -152,9 +152,20 @@ def test(args, io):
     device = torch.device("cuda" if args.cuda else "cpu")
 
     #Try to load models
-    model = DGCNN(args).to(device)
-    model = nn.DataParallel(model)
-    model.load_state_dict(torch.load(args.model_path))
+    if args.model == 'pointnet':
+        model = PointNet(args).to(device)
+    elif args.model == 'dgcnn':
+        model = DGCNN(args).to(device)
+    elif args.model == 'ognet':
+        model = Model_dense(20, [64,128,256,512], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=0.7, cluster='xyzrgb')
+        model.to(device)
+    else:
+        raise Exception("Not implemented")
+    try:
+        model.load_state_dict(torch.load(args.model_path))
+    except:
+        model = nn.DataParallel(model)
+        model.load_state_dict(torch.load(args.model_path))
     model = model.eval()
     test_acc = 0.0
     count = 0.0
@@ -163,9 +174,13 @@ def test(args, io):
     for data, label in test_loader:
 
         data, label = data.to(device), label.to(device).squeeze()
-        data = data.permute(0, 2, 1)
         batch_size = data.size()[0]
-        logits = model(data)
+        if args.model == 'ognet':
+            logits = model(data, data)
+            #logits += model(1.1*data, 1.1*data)
+        else:
+            data = data.permute(0, 2, 1)
+            logits = model(data)
         preds = logits.max(dim=1)[1]
         test_true.append(label.cpu().numpy())
         test_pred.append(preds.detach().cpu().numpy())
