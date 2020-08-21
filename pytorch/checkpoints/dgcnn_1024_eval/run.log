@@ -3,3 +3,8 @@ Using GPU : 0 from 1 devices
 Namespace(batch_size=32, dataset='modelnet40', dropout=0.5, emb_dims=1024, epochs=250, eval=True, exp_name='dgcnn_1024_eval', k=20, lr=0.001, model='dgcnn', model_path='pretrained/model.1024.t7', momentum=0.9, no_cuda=False, num_points=1024, seed=1, test_batch_size=16, use_sgd=True)
 Using GPU : 0 from 1 devices
 Test :: test acc: 0.929903, test avg acc: 0.901494
+Namespace(batch_size=32, dataset='modelnet40', dropout=0.5, emb_dims=1024, epochs=250, eval=True, exp_name='dgcnn_1024_eval', k=20, lr=0.001, model='dgcnn', model_path='checkpoints/dgcnn_1024/models/model.t7', momentum=0.9, no_cuda=False, num_points=1024, seed=1, test_batch_size=16, use_sgd=True)
+Using GPU : 0 from 3 devices
+Namespace(batch_size=32, dataset='modelnet40', dropout=0.5, emb_dims=1024, epochs=250, eval=True, exp_name='dgcnn_1024_eval', k=20, lr=0.001, model='dgcnn', model_path='checkpoints/dgcnn_1024/models/model.t7', momentum=0.9, no_cuda=False, num_points=1024, seed=1, test_batch_size=16, use_sgd=True)
+Using GPU : 0 from 3 devices
+Test :: test acc: 0.928282, test avg acc: 0.894238
