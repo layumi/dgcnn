@@ -162,3 +162,5 @@ Train 48, loss: 1.481635, train acc: 0.925387, train avg acc: 0.887181
 Test 48, loss: 1.567020, test acc: 0.887358, test avg acc: 0.849099
 Train 49, loss: 1.484874, train acc: 0.923758, train avg acc: 0.885637
 Test 49, loss: 1.641132, test acc: 0.863047, test avg acc: 0.820703
+Train 50, loss: 1.481007, train acc: 0.924572, train avg acc: 0.884448
+Test 50, loss: 1.559012, test acc: 0.884522, test avg acc: 0.839110

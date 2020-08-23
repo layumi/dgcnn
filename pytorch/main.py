@@ -199,7 +199,6 @@ def test(args, io):
             #logits = model(1.1*data, 1.1*data)
         else:
             data = data.permute(0, 2, 1)
-            print(data.shape)
             logits = model(data)
         preds = logits.max(dim=1)[1]
         test_true.append(label.cpu().numpy())
