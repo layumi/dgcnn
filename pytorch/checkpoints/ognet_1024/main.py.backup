@@ -23,7 +23,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from util import cal_loss, IOStream
 import sklearn.metrics as metrics
-
+from ptflops import get_model_complexity_info
 
 def _init_():
     if not os.path.exists('checkpoints'):
@@ -51,7 +51,10 @@ def train(args, io):
     elif args.model == 'dgcnn':
         model = DGCNN(args).to(device)
     elif args.model == 'ognet':
-        model = Model_dense(20, [64,128,256,512], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=0.7, cluster='xyzrgb')
+        model = Model_dense(20, [64,128,256,512], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, cluster='xyzrgb')
+        model.to(device)
+    elif args.model == 'ognet-small':
+        model = Model_dense(20, [48,96,192,384], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, cluster='xyzrgb')
         model.to(device)
     else:
         raise Exception("Not implemented")
@@ -86,7 +89,7 @@ def train(args, io):
             data, label = data.to(device), label.to(device).squeeze()
             batch_size = data.size()[0]
             opt.zero_grad()
-            if args.model == 'ognet':
+            if args.model == 'ognet' or args.model == 'ognet-small':
                 logits = model(data, data)
             else:
                 data = data.permute(0, 2, 1)
@@ -120,7 +123,7 @@ def train(args, io):
         for data, label in test_loader:
             data, label = data.to(device), label.to(device).squeeze()
             batch_size = data.size()[0]
-            if args.model == 'ognet':
+            if args.model == 'ognet' or args.model == 'ognet-small':
                 logits = model(data, data)
             else:
                 data = data.permute(0, 2, 1)
@@ -159,14 +162,30 @@ def test(args, io):
     elif args.model == 'ognet':
         model = Model_dense(20, [64,128,256,512], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=0.7, cluster='xyzrgb')
         model.to(device)
+    elif args.model == 'ognet-small':
+        model = Model_dense(20, [48,96,192,384], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=0.7, cluster='xyzrgb')
+        model.to(device)
     else:
         raise Exception("Not implemented")
+
     try:
         model.load_state_dict(torch.load(args.model_path))
     except:
         model = nn.DataParallel(model)
         model.load_state_dict(torch.load(args.model_path))
     model = model.eval()
+    model = model.module
+
+    batch0,label0 = next(iter(test_loader))
+    batch0 = batch0[0].unsqueeze(0)
+    print(batch0.shape)
+    
+    macs, params = get_model_complexity_info(model, batch0, ( (1024, 3) ), as_strings=True, print_per_layer_stat=False, verbose=True)
+
+    print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
+    print('{:<30}  {:<8}'.format('Number of parameters: ', params))
+
+
     test_acc = 0.0
     count = 0.0
     test_true = []
@@ -175,7 +194,7 @@ def test(args, io):
 
         data, label = data.to(device), label.to(device).squeeze()
         batch_size = data.size()[0]
-        if args.model == 'ognet':
+        if args.model == 'ognet' or args.model == 'ognet-small':
             logits = model(data, data)
             #logits += model(1.1*data, 1.1*data)
         else:
@@ -198,7 +217,7 @@ if __name__ == "__main__":
     parser.add_argument('--exp_name', type=str, default='exp', metavar='N',
                         help='Name of the experiment')
     parser.add_argument('--model', type=str, default='dgcnn', metavar='N',
-                        choices=['pointnet', 'dgcnn', 'ognet'],
+                        choices=['pointnet', 'dgcnn', 'ognet', 'ognet-small'],
                         help='Model to use, [pointnet, dgcnn]')
     parser.add_argument('--dataset', type=str, default='modelnet40', metavar='N',
                         choices=['modelnet40'])
