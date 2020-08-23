@@ -195,10 +195,11 @@ def test(args, io):
         data, label = data.to(device), label.to(device).squeeze()
         batch_size = data.size()[0]
         if args.model == 'ognet' or args.model == 'ognet-small':
-            logits = model(data, data)
-            #logits += model(1.1*data, 1.1*data)
+            logits = model(data, data) 
+            #logits = model(1.1*data, 1.1*data)
         else:
             data = data.permute(0, 2, 1)
+            print(data.shape)
             logits = model(data)
         preds = logits.max(dim=1)[1]
         test_true.append(label.cpu().numpy())

@@ -106,3 +106,10 @@ Test :: test acc: 0.920178, test avg acc: 0.888413
 Namespace(batch_size=32, dataset='modelnet40', dropout=0.5, emb_dims=1024, epochs=250, eval=True, exp_name='exp', k=20, lr=0.001, model='dgcnn', model_path='checkpoints/dgcnn_1024/models/model.t7', momentum=0.9, no_cuda=False, num_points=1024, seed=1, test_batch_size=16, use_sgd=True)
 Using GPU : 0 from 3 devices
 Test :: test acc: 0.928282, test avg acc: 0.894238
+Namespace(batch_size=32, dataset='modelnet40', dropout=0.5, emb_dims=1024, epochs=250, eval=True, exp_name='exp', k=20, lr=0.001, model='pointnet', model_path='checkpoints/pointnet_d0.5/models/model.t7', momentum=0.9, no_cuda=False, num_points=1024, seed=1, test_batch_size=16, use_sgd=True)
+Using GPU : 0 from 1 devices
+Namespace(batch_size=32, dataset='modelnet40', dropout=0.5, emb_dims=1024, epochs=250, eval=True, exp_name='exp', k=20, lr=0.001, model='pointnet', model_path='checkpoints/pointnet_d0.5/models/model.t7', momentum=0.9, no_cuda=False, num_points=1024, seed=1, test_batch_size=16, use_sgd=True)
+Using GPU : 0 from 1 devices
+Namespace(batch_size=32, dataset='modelnet40', dropout=0.5, emb_dims=1024, epochs=250, eval=True, exp_name='exp', k=20, lr=0.001, model='pointnet', model_path='checkpoints/pointnet_d0.5/models/model.t7', momentum=0.9, no_cuda=False, num_points=1024, seed=1, test_batch_size=16, use_sgd=True)
+Using GPU : 0 from 1 devices
+Test :: test acc: 0.902755, test avg acc: 0.848000
