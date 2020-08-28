@@ -1,4 +1,5 @@
 data/
 log/
 *.pyc
+pytorch/checkpoints/
 .DS_Store
