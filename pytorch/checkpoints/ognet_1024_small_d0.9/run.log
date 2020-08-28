@@ -1,7 +1,0 @@
-Namespace(batch_size=32, dataset='modelnet40', dropout=0.9, emb_dims=1024, epochs=250, eval=False, exp_name='ognet_1024_small_d0.9', k=20, lr=0.001, model='ognet-small', model_path='', momentum=0.9, no_cuda=False, num_points=1024, seed=1, test_batch_size=16, use_sgd=True)
-Using GPU : 0 from 1 devices
-Train 0, loss: 2208.406786, train acc: 0.043770, train avg acc: 0.028738
-Test 0, loss: 44619.421913, test acc: 0.061183, test avg acc: 0.037750
-Train 1, loss: 2981501.678523, train acc: 0.044686, train avg acc: 0.030939
-Test 1, loss: 3177992567.286872, test acc: 0.040519, test avg acc: 0.025000
-Train 2, loss: 3834978683.863192, train acc: 0.043669, train avg acc: 0.029302

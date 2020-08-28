@@ -1,2 +1,0 @@
-Namespace(batch_size=32, dataset='modelnet40', dropout=0.5, emb_dims=1024, epochs=250, eval=False, exp_name='ognet_1024_small_d0.5_lr2', k=20, lr=0.002, model='ognet-small', model_path='', momentum=0.9, no_cuda=False, num_points=1024, seed=1, test_batch_size=16, use_sgd=True)
-Using GPU : 0 from 1 devices
