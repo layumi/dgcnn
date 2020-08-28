@@ -75,6 +75,7 @@ def train(args, io):
     criterion = cal_loss
 
     best_test_acc = 0
+    best_avg_per_class_acc = 0
     for epoch in range(args.epochs):
         scheduler.step()
         ####################
@@ -143,8 +144,10 @@ def train(args, io):
                                                                               test_acc,
                                                                               avg_per_class_acc)
         io.cprint(outstr)
-        if test_acc >= best_test_acc:
+        if test_acc + avg_per_class_acc >= best_test_acc + best_avg_per_class_acc:
             best_test_acc = test_acc
+            best_avg_per_class_acc = avg_per_class_acc
+            print('This is the current best.')
             torch.save(model.state_dict(), 'checkpoints/%s/models/model.t7' % args.exp_name)
 
 

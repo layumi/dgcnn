@@ -19,6 +19,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from data import ModelNet40
 from model import PointNet, DGCNN
 from OGNet import Model_dense
+from pointnet2_model import PointNet2SSG, PointNet2MSG
 import numpy as np
 from torch.utils.data import DataLoader
 from util import cal_loss, IOStream
@@ -50,11 +51,19 @@ def train(args, io):
         model = PointNet(args).to(device)
     elif args.model == 'dgcnn':
         model = DGCNN(args).to(device)
+    elif args.model == 'ssg': 
+        model = PointNet2SSG( output_classes=40, dropout_prob=args.dropout)
+        model.to(device)
+    elif args.model == 'msg':
+        model = PointNet2MSG( output_classes=40, dropout_prob=args.dropout)
+        model.to(device)
     elif args.model == 'ognet':
-        model = Model_dense(20, [64,128,256,512], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, cluster='xyzrgb')
+        # [64,128,256,512]
+        model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, cluster='xyzrgb', pre_act = args.pre_act)
         model.to(device)
     elif args.model == 'ognet-small':
-        model = Model_dense(20, [48,96,192,384], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, cluster='xyzrgb')
+        # [48,96,192,384] 
+        model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, cluster='xyzrgb', pre_act = args.pre_act )
         model.to(device)
     else:
         raise Exception("Not implemented")
@@ -75,6 +84,7 @@ def train(args, io):
     criterion = cal_loss
 
     best_test_acc = 0
+    best_avg_per_class_acc = 0
     for epoch in range(args.epochs):
         scheduler.step()
         ####################
@@ -89,7 +99,7 @@ def train(args, io):
             data, label = data.to(device), label.to(device).squeeze()
             batch_size = data.size()[0]
             opt.zero_grad()
-            if args.model == 'ognet' or args.model == 'ognet-small':
+            if args.model == 'ognet' or args.model == 'ognet-small' or args.model=='ssg' or args.model=='msg':
                 logits = model(data, data)
             else:
                 data = data.permute(0, 2, 1)
@@ -123,7 +133,7 @@ def train(args, io):
         for data, label in test_loader:
             data, label = data.to(device), label.to(device).squeeze()
             batch_size = data.size()[0]
-            if args.model == 'ognet' or args.model == 'ognet-small':
+            if args.model == 'ognet' or args.model == 'ognet-small' or args.model=='ssg' or args.model=='msg':
                 logits = model(data, data)
             else:
                 data = data.permute(0, 2, 1)
@@ -143,8 +153,10 @@ def train(args, io):
                                                                               test_acc,
                                                                               avg_per_class_acc)
         io.cprint(outstr)
-        if test_acc >= best_test_acc:
+        if test_acc + avg_per_class_acc >= best_test_acc + best_avg_per_class_acc:
             best_test_acc = test_acc
+            best_avg_per_class_acc = avg_per_class_acc
+            print('This is the current best.')
             torch.save(model.state_dict(), 'checkpoints/%s/models/model.t7' % args.exp_name)
 
 
@@ -159,11 +171,17 @@ def test(args, io):
         model = PointNet(args).to(device)
     elif args.model == 'dgcnn':
         model = DGCNN(args).to(device)
+    elif args.model == 'ssg':
+        model = PointNet2SSG( output_classes=40, dropout_prob=0)
+        model.to(device)
+    elif args.model == 'msg':
+        model = PointNet2MSG( output_classes=40, dropout_prob=0)
+        model.to(device)
     elif args.model == 'ognet':
-        model = Model_dense(20, [64,128,256,512], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=0.7, cluster='xyzrgb')
+        model = Model_dense(20, [64,128,256,512], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=0, cluster='xyzrgb')
         model.to(device)
     elif args.model == 'ognet-small':
-        model = Model_dense(20, [48,96,192,384], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=0.7, cluster='xyzrgb')
+        model = Model_dense(20, [48,96,192,384], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=0, cluster='xyzrgb')
         model.to(device)
     else:
         raise Exception("Not implemented")
@@ -194,7 +212,7 @@ def test(args, io):
 
         data, label = data.to(device), label.to(device).squeeze()
         batch_size = data.size()[0]
-        if args.model == 'ognet' or args.model == 'ognet-small':
+        if args.model == 'ognet' or args.model == 'ognet-small' or args.model=='ssg' or args.model=='msg':
             logits = model(data, data) 
             #logits = model(1.1*data, 1.1*data)
         else:
@@ -217,7 +235,7 @@ if __name__ == "__main__":
     parser.add_argument('--exp_name', type=str, default='exp', metavar='N',
                         help='Name of the experiment')
     parser.add_argument('--model', type=str, default='dgcnn', metavar='N',
-                        choices=['pointnet', 'dgcnn', 'ognet', 'ognet-small'],
+                        choices=['pointnet', 'dgcnn', 'ognet', 'ognet-small', 'ssg', 'msg'],
                         help='Model to use, [pointnet, dgcnn]')
     parser.add_argument('--dataset', type=str, default='modelnet40', metavar='N',
                         choices=['modelnet40'])
@@ -249,9 +267,21 @@ if __name__ == "__main__":
                         help='Num of nearest neighbors to use')
     parser.add_argument('--model_path', type=str, default='', metavar='N',
                         help='Pretrained model path')
+    parser.add_argument('--feature_dims',default='64,128,256,512', type=str,
+                        help='64, 128, 256, 512 or 64, 128, 256, 512, 1024')
+    parser.add_argument('--id_skip', action='store_true')
+    parser.add_argument('--pre_act', action='store_true')
     args = parser.parse_args()
 
     _init_()
+
+    if len(args.feature_dims)>0:
+        str_features = args.feature_dims.split(',')
+        features = []
+        for feature in str_features:
+            feature = int(feature)
+            features.append(feature)
+        args.feature_dims = features
 
     io = IOStream('checkpoints/' + args.exp_name + '/run.log')
     io.cprint(str(args))

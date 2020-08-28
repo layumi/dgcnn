@@ -3,6 +3,7 @@ from dgl.graph import DGLGraph
 from dgl import backend as F
 from scipy import sparse
 import numpy as np
+#import torch
 def pairwise_squared_distance(x):
     '''
     x : (n_samples, n_points, dims)
@@ -12,7 +13,7 @@ def pairwise_squared_distance(x):
     return x2s + x2s.transpose(-1, -2) - 2 * x @ x.transpose(-1, -2)
 
 
-def knn_graphE(x, k, istrain=False):
+def knn_graphE(x, k, istrain=False, jitter=False):
     """Transforms the given point set to a directed graph, whose coordinates
     are given as a matrix. The predecessors of each point are its k-nearest
     neighbors.
@@ -42,13 +43,21 @@ def knn_graphE(x, k, istrain=False):
     n_samples, n_points, _ = F.shape(x)
 
     dist = pairwise_squared_distance(x)
-    if istrain and np.random.rand()>0.5:
+
+    if istrain and jitter and np.random.rand()>0.5:
         k_indices = F.argtopk(dist, round(1.5*k), 2, descending=False)
         rand_k = np.random.permutation( round(1.5*k)-1) [0:k-1] +1 # 0 + random k-1 
         rand_k = np.append(rand_k,0)
         k_indices = k_indices[:,:, rand_k] # add 0
+    elif jitter:
+        k_indices = F.argtopk(dist, round(1.5*k), 2, descending=False)
+        rand_k = np.linspace(start=0, stop= round(1.5*k)-1, num=k, dtype=np.int64) 
+        k_indices = k_indices[:,:, rand_k] # add 0
     else:
         k_indices = F.argtopk(dist, k, 2, descending=False)
+        #print(k_indices)
+        #_, k_indices = torch.topk(dist, k, 2, largest=False, sorted=False)
+        #k_indices = np.argpartition(dist.cpu(),range(1,k+1))
 
     dst = F.copy_to(k_indices, F.cpu())
 
@@ -84,7 +93,7 @@ class KNNGraphE(nn.Module):
     def __init__(self, k):
         super(KNNGraphE, self).__init__()
         self.k = k
-    def forward(self, x, istrain=False):
+    def forward(self, x, istrain=False, jitter = False):
         """Forward computation.
 
         Parameters
@@ -99,5 +108,5 @@ class KNNGraphE(nn.Module):
         DGLGraph
             A DGLGraph with no features.
         """
-        return knn_graphE(x, self.k, istrain)
+        return knn_graphE(x, self.k, istrain, jitter)
 
