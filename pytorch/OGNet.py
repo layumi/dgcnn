@@ -20,10 +20,11 @@ class Model(nn.Module):
     def __init__(self, k, feature_dims, emb_dims, output_classes, init_points = 512, input_dims=3,
                  dropout_prob=0.5, npart=1, id_skip=False, drop_connect_rate=0, res_scale = 1.0,
                  light = False, bias = False, cluster='xyz', conv='EdgeConv', use_xyz=True, 
-                 use_se = True, graph_jitter = False, pre_act = False):
+                 use_se = True, graph_jitter = False, pre_act = False, norm = 'bn'):
         super(Model, self).__init__()
 
         self.npart = npart
+        self.norm = norm
         self.graph_jitter = graph_jitter
         self.res_scale = res_scale
         self.id_skip = id_skip
@@ -47,7 +48,10 @@ class Model(nn.Module):
         last_npoint = -1
         for i in range(self.num_layers):
             if pre_act:
-                self.bn.append(nn.BatchNorm1d(feature_dims[i-1] if i > 0 else input_dims))
+                if norm == 'ln':
+                    self.bn.append(nn.LayerNorm(feature_dims[i-1] if i > 0 else input_dims))
+                else:
+                    self.bn.append(nn.BatchNorm1d(feature_dims[i-1] if i > 0 else input_dims))
             if k==1: 
                 self.conv.append(nn.Linear(feature_dims[i-1] if i > 0 else input_dims, 
                                      feature_dims[i] ))
@@ -56,12 +60,16 @@ class Model(nn.Module):
                     self.conv.append(EdgeConv_Light(
                         feature_dims[i - 1] if i > 0 else input_dims,
                         feature_dims[i],
-                        batch_norm= False if pre_act else True))
+                        batch_norm= False if pre_act or norm == 'ln'else True))
+                    if not pre_act and norm == 'ln':
+                        self.bn.append(nn.LayerNorm(feature_dims[i]))
                 else: 
                     self.conv.append(EdgeConv(
                         feature_dims[i - 1] if i > 0 else input_dims,
                         feature_dims[i],
                         batch_norm= False if pre_act else True))
+                    if not pre_act and norm == 'ln':
+                        self.bn.append(nn.LayerNorm(feature_dims[i]))
             elif conv == 'GATConv':
                     self.conv.append(GATConv(
                         feature_dims[i - 1] if i > 0 else input_dims,
@@ -184,10 +192,13 @@ class Model(nn.Module):
 
             ######### Dynamic Graph Conv #########
             if self.pre_act == True:
-                h = h.transpose(1, 2).contiguous()
-                h = self.bn[i](h)
-                h = F.leaky_relu(h, 0.2)
-                h = h.transpose(1, 2).contiguous()
+                if self.norm == 'ln':
+                    h = self.bn[i](h)
+                else:
+                    h = h.transpose(1, 2).contiguous()
+                    h = self.bn[i](h)
+                    h = F.leaky_relu(h, 0.2)
+                    h = h.transpose(1, 2).contiguous()
 
             h = h.view(batch_size * n_points, -1)
             if self.k==1:
@@ -198,6 +209,8 @@ class Model(nn.Module):
                 h = self.conv[i](g, h)
 
             if self.pre_act == False:
+                if self.norm == 'ln':
+                    h = self.bn[i](h)
                 h = F.leaky_relu(h, 0.2)
 
             h = h.view(batch_size, n_points, -1)
@@ -253,10 +266,10 @@ class Model_dense(Model):
     def __init__(self, k, feature_dims, emb_dims, output_classes, init_points = 512, input_dims=3,
                  dropout_prob=0.5, npart=1, id_skip=False, drop_connect_rate=0, res_scale=1.0, 
                  light=False, bias = False, cluster='xyz', conv='EdgeConv', use_xyz=True, 
-                 use_se=True, graph_jitter = False, pre_act = False):
+                 use_se=True, graph_jitter = False, pre_act = False, norm = 'bn'):
         super().__init__(k, feature_dims, emb_dims, output_classes, init_points, input_dims, 
                  dropout_prob, npart, id_skip, drop_connect_rate, res_scale, 
-                 light, bias, cluster, conv, use_xyz, use_se, graph_jitter, pre_act)
+                 light, bias, cluster, conv, use_xyz, use_se, graph_jitter, pre_act, norm)
         self.sa = nn.ModuleList()
         npoint = init_points
         last_npoint = -1
@@ -292,10 +305,10 @@ class Model_dense2(Model):
     def __init__(self, k, feature_dims, emb_dims, output_classes, init_points = 512, input_dims=3,
                  dropout_prob=0.5, npart=1, id_skip=False, drop_connect_rate=0, res_scale=1.0,
                  light=False, bias = False, cluster='xyz', conv='EdgeConv', 
-                 use_xyz=True, graph_jitter = False, pre_act = False):
+                 use_xyz=True, graph_jitter = False, pre_act = False, norm = 'bn'):
         super().__init__(k, feature_dims, emb_dims, output_classes, init_points, input_dims,
                  dropout_prob, npart, id_skip, drop_connect_rate, res_scale,
-                 light, bias, cluster, conv, use_xyz, graph_jitter, pre_act)
+                 light, bias, cluster, conv, use_xyz, graph_jitter, pre_act, bn)
         module_number = len(self.sa)
         self.sa = nn.ModuleList()
         npoint = init_points
@@ -330,7 +343,7 @@ class Model_dense2(Model):
 if __name__ == '__main__':
 # Here I left a simple forward function.
 # Test the model, before you train it. 
-    net = Model_dense( 20, [48, 96, 96, 192, 192, 192, 384, 384], [512], output_classes=751, init_points = 768, input_dims=3, dropout_prob=0.5, npart= 2, id_skip=True, pre_act = True)
+    net = Model_dense( 20, [48, 96, 96, 192, 192, 192, 384, 384], [512], output_classes=751, init_points = 768, input_dims=3, dropout_prob=0.5, npart= 2, id_skip=True, pre_act = True, norm = 'ln')
 #    net = Model_dense( 20, [40,40,80,80,192,192,320,320, 512], [512], output_classes=751, 
 #                     init_points = 512, input_dims=3, dropout_prob=0.5, npart= 1, id_skip=True, 
 #                     light=True, cluster='xyz', conv='SAGEConv', use_xyz=False)

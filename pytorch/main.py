@@ -59,11 +59,11 @@ def train(args, io):
         model.to(device)
     elif args.model == 'ognet':
         # [64,128,256,512]
-        model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, cluster='xyzrgb', pre_act = args.pre_act)
+        model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, cluster='xyzrgb', pre_act = args.pre_act, norm = args.norm_layer)
         model.to(device)
     elif args.model == 'ognet-small':
         # [48,96,192,384] 
-        model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, cluster='xyzrgb', pre_act = args.pre_act )
+        model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, cluster='xyzrgb', pre_act = args.pre_act , norm = args.norm_layer)
         model.to(device)
     else:
         raise Exception("Not implemented")
@@ -271,6 +271,7 @@ if __name__ == "__main__":
                         help='64, 128, 256, 512 or 64, 128, 256, 512, 1024')
     parser.add_argument('--id_skip', action='store_true')
     parser.add_argument('--pre_act', action='store_true')
+    parser.add_argument('--norm_layer', type=str, default='bn')
     args = parser.parse_args()
 
     _init_()
