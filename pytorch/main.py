@@ -59,11 +59,11 @@ def train(args, io):
         model.to(device)
     elif args.model == 'ognet':
         # [64,128,256,512]
-        model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, cluster='xyzrgb', pre_act = args.pre_act, norm = args.norm_layer)
+        model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, drop_connect_rate=args.drop_connect_rate,cluster='xyzrgb', pre_act = args.pre_act, norm = args.norm_layer)
         model.to(device)
     elif args.model == 'ognet-small':
         # [48,96,192,384] 
-        model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, cluster='xyzrgb', pre_act = args.pre_act , norm = args.norm_layer)
+        model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip,drop_connect_rate=args.drop_connect_rate, cluster='xyzrgb', pre_act = args.pre_act , norm = args.norm_layer)
         model.to(device)
     else:
         raise Exception("Not implemented")
@@ -261,6 +261,8 @@ if __name__ == "__main__":
                         help='num of points to use')
     parser.add_argument('--dropout', type=float, default=0.5,
                         help='dropout rate')
+    parser.add_argument('--drop_connect_rate', type=float, default=0.5,
+                        help='drop connect rate')
     parser.add_argument('--emb_dims', type=int, default=1024, metavar='N',
                         help='Dimension of embeddings')
     parser.add_argument('--k', type=int, default=20, metavar='N',
