@@ -19,6 +19,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from data import ModelNet40
 from model import PointNet, DGCNN
 from OGNet import Model_dense
+from model_efficient import ModelE_dense
 from pointnet2_model import PointNet2SSG, PointNet2MSG
 import numpy as np
 from torch.utils.data import DataLoader
@@ -60,6 +61,8 @@ def train(args, io):
     elif args.model == 'ognet':
         # [64,128,256,512]
         model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, drop_connect_rate=args.drop_connect_rate,cluster='xyzrgb', pre_act = args.pre_act, norm = args.norm_layer)
+        if args.efficient:
+             model = ModelE_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, drop_connect_rate=args.drop_connect_rate,cluster='xyzrgb', pre_act = args.pre_act, norm = args.norm_layer)
         model.to(device)
     elif args.model == 'ognet-small':
         # [48,96,192,384] 
@@ -272,6 +275,7 @@ if __name__ == "__main__":
     parser.add_argument('--feature_dims',default='64,128,256,512', type=str,
                         help='64, 128, 256, 512 or 64, 128, 256, 512, 1024')
     parser.add_argument('--id_skip', action='store_true')
+    parser.add_argument('--efficient', action='store_true')
     parser.add_argument('--pre_act', action='store_true')
     parser.add_argument('--norm_layer', type=str, default='bn')
     args = parser.parse_args()
