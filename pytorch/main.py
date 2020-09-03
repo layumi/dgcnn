@@ -181,10 +181,14 @@ def test(args, io):
         model = PointNet2MSG( output_classes=40, dropout_prob=0)
         model.to(device)
     elif args.model == 'ognet':
-        model = Model_dense(20, [64,128,256,512], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=0, cluster='xyzrgb')
+        # [64,128,256,512]
+        model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, drop_connect_rate=args.drop_connect_rate,cluster='xyzrgb', pre_act = args.pre_act, norm = args.norm_layer)
+        if args.efficient:
+             model = ModelE_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip, drop_connect_rate=args.drop_connect_rate,cluster='xyzrgb', pre_act = args.pre_act, norm = args.norm_layer)
         model.to(device)
     elif args.model == 'ognet-small':
-        model = Model_dense(20, [48,96,192,384], [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=0, cluster='xyzrgb')
+        # [48,96,192,384]
+        model = Model_dense(20, args.feature_dims, [512], output_classes=40, init_points = 768, input_dims=3, dropout_prob=args.dropout, id_skip = args.id_skip,drop_connect_rate=args.drop_connect_rate, cluster='xyzrgb', pre_act = args.pre_act , norm = args.norm_layer)
         model.to(device)
     else:
         raise Exception("Not implemented")
@@ -200,6 +204,7 @@ def test(args, io):
     batch0,label0 = next(iter(test_loader))
     batch0 = batch0[0].unsqueeze(0)
     print(batch0.shape)
+    print(model)
     
     macs, params = get_model_complexity_info(model, batch0, ( (1024, 3) ), as_strings=True, print_per_layer_stat=False, verbose=True)
 
