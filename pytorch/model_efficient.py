@@ -66,18 +66,27 @@ class ModelE(nn.Module):
                             feature_dims[i], kernel_size=1,
                             bias = not light ))
 
+                    if i==0 and j==0 and pre_act:
+                        norm_dim = input_dims
+                    else:
+                        norm_dim = feature_dims[i-1] if pre_act and j==0 else feature_dims[i]
+
                     if norm == 'ln':
                         if layer_drop>0:
-                            self.bn.append(nn.Sequential( nn.LayerNorm(feature_dims[i]),
+                            self.bn.append(nn.Sequential( 
+                                 nn.LayerNorm(norm_dim),
                                  nn.Dropout(layer_drop)) ) 
                         else:
-                            self.bn.append(nn.LayerNorm(feature_dims[i]))
+                            self.bn.append(
+                                 nn.LayerNorm(norm_dim))
                     else:
                         if layer_drop>0:
-                            self.bn.append(nn.Sequential( nn.BatchNorm1d(feature_dims[i]),
-                                nn.Dropout(layer_drop)) )
+                            self.bn.append(nn.Sequential( 
+                                 nn.BatchNorm1d(norm_dim),
+                                 nn.Dropout(layer_drop)) )
                         else:
-                            self.bn.append(nn.BatchNorm1d(feature_dims[i]))
+                            self.bn.append(
+                                 nn.BatchNorm1d(norm_dim))
                                 
 
             if i>0 and feature_dims[i]>feature_dims[i-1]:
@@ -164,7 +173,7 @@ class ModelE(nn.Module):
             h = h.transpose(1, 2).contiguous()
             for j in range(self.num_conv):
                 index = self.num_conv*i+j
-
+                ####### BN + ReLU #####
                 if self.pre_act == True:
                     if self.norm == 'ln':
                         h = h.transpose(1, 2).contiguous()
@@ -174,6 +183,7 @@ class ModelE(nn.Module):
                         h = self.bn[index](h)
                     h = F.leaky_relu(h, 0.2)
 
+                ####### Graph Feature ###########
                 if i == self.num_layers-1:
                     if self.cluster == 'xyz':
                         h = get_graph_feature(xyz, h, k=self.k)
@@ -185,9 +195,12 @@ class ModelE(nn.Module):
                         h = get_graph_feature( torch.cat( (xyz, h), 1), h, k=self.k)
                     else:
                         h = get_graph_feature(xyz, h, k=self.k)
+
                 ####### Conv ##########
                 h = self.conv[index](h)
                 h = h.max(dim=-1, keepdim=False)[0]
+
+                ####### BN + ReLU #####
                 if self.pre_act == False:
                     if self.norm == 'ln':
                         h = h.transpose(1, 2).contiguous()
@@ -216,7 +229,7 @@ class ModelE(nn.Module):
                 last_feature_dim = feature_dim
             else:
                 xyz = xyz.transpose(1, 2).contiguous()
-
+            #print(xyz.shape, h.shape)
         if self.npart==1:
             # Pooling
             h_max, _ = torch.max(h, 1)
@@ -295,7 +308,7 @@ if __name__ == '__main__':
     net = ModelE_dense( 20, [48, 96, 96, 192, 192, 192, 384,384,384], [512], 
                         output_classes=751, cluster='xyzrgb', init_points = 768, 
                         input_dims=3, dropout_prob=0.5, npart= 2, id_skip=True, 
-                        pre_act = False, norm = 'bn', layer_drop=0.1, num_conv=1)
+                        pre_act = True, norm = 'bn', layer_drop=0.1, num_conv=2)
 #    net = Model_dense( 20, [40,40,80,80,192,192,320,320, 512], [512], output_classes=751, 
 #                     init_points = 512, input_dims=3, dropout_prob=0.5, npart= 1, id_skip=True, 
 #                     light=True, cluster='xyz', conv='SAGEConv', use_xyz=False)
