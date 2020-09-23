@@ -52,7 +52,8 @@ class ModelE(nn.Module):
             if k==1: 
                 self.conv.append(nn.Conv2d(feature_dims[i-1] if i > 0 else input_dims, 
                                      feature_dims[i] , kernel_size=1, 
-                                     groups = 2 if light else 1, bias = not light))
+                                     bias = not light))
+                self.bn.append( nn.BatchNorm1d( feature_dims[i] ))
             elif conv == 'EdgeConv':
                 for j in range(self.num_conv):
                     if j==0:
@@ -184,22 +185,24 @@ class ModelE(nn.Module):
                     h = F.leaky_relu(h, 0.2)
 
                 ####### Graph Feature ###########
-                if i == self.num_layers-1:
-                    if self.cluster == 'xyz':
-                        h = get_graph_feature(xyz, h, k=self.k)
-                    elif self.cluster == 'xyzrgb' or self.cluster == 'allxyzrgb':
-                        h = get_graph_feature( torch.cat( (xyz, h), 1), h, k=self.k)
+                if self.k==1 and j==0:
+                    h = h.unsqueeze(-1)
                 else:
-                    # Common Layers
-                    if self.cluster == 'allxyzrgb':
-                        h = get_graph_feature( torch.cat( (xyz, h), 1), h, k=self.k)
+                    if i == self.num_layers-1:
+                        if self.cluster == 'xyz':
+                            h = get_graph_feature(xyz, h, k=self.k)
+                        elif self.cluster == 'xyzrgb' or self.cluster == 'allxyzrgb':
+                            h = get_graph_feature( torch.cat( (xyz, h), 1), h, k=self.k)
                     else:
-                        h = get_graph_feature(xyz, h, k=self.k)
+                    # Common Layers
+                        if self.cluster == 'allxyzrgb':
+                            h = get_graph_feature( torch.cat( (xyz, h), 1), h, k=self.k)
+                        else:
+                            h = get_graph_feature(xyz, h, k=self.k)
 
                 ####### Conv ##########
                 h = self.conv[index](h)
                 h = h.max(dim=-1, keepdim=False)[0]
-
                 ####### BN + ReLU #####
                 if self.pre_act == False:
                     if self.norm == 'ln':
@@ -213,7 +216,9 @@ class ModelE(nn.Module):
             h = h.transpose(1, 2).contiguous()
             #print(h.shape) # batchsize x point_number x feature_dim
             batch_size, n_points, feature_dim  = h.shape
-            if self.id_skip: 
+
+            ######### Residual Before Downsampling#############
+            if self.id_skip==1: 
                 if istrain and self.drop_connect_rate>0:
                     h = drop_connect(h, p=self.drop_connect_rate, training=istrain)
                 if feature_dim != last_feature_dim:
@@ -225,10 +230,26 @@ class ModelE(nn.Module):
                 h = h.transpose(1, 2).contiguous()
                 xyz, h  = self.sa[s2_count](xyz_input, h)
                 h = h.transpose(1, 2).contiguous()
-                s2_count +=1
-                last_feature_dim = feature_dim
+                if self.id_skip == 2: 
+                    h_input = pointnet2_utils.gather_operation(
+                        h_input.transpose(1, 2).contiguous(), 
+                        pointnet2_utils.furthest_point_sample(xyz_input, h.shape[1] )
+                    ).transpose(1, 2).contiguous()
             else:
                 xyz = xyz.transpose(1, 2).contiguous()
+
+            ######### Residual Before Downsampling (Paper) #############
+            if self.id_skip==2:
+                if istrain and self.drop_connect_rate>0:
+                    h = drop_connect(h, p=self.drop_connect_rate, training=istrain)
+                if feature_dim != last_feature_dim:
+                    h_input = self.conv_s2[s2_count](h_input)
+                h = h_input + self.res_scale * h
+
+            if feature_dim != last_feature_dim:
+                s2_count +=1
+                last_feature_dim = feature_dim
+
             #print(xyz.shape, h.shape)
         if self.npart==1:
             # Pooling
@@ -305,10 +326,10 @@ class ModelE_dense(ModelE):
 if __name__ == '__main__':
 # Here I left a simple forward function.
 # Test the model, before you train it. 
-    net = ModelE_dense( 20, [48, 96, 96, 192, 192, 192, 384,384,384], [512], 
+    net = ModelE_dense( 9, [48, 96, 96, 192, 192, 192, 384,384,384], [512],  
                         output_classes=751, cluster='xyzrgb', init_points = 768, 
-                        input_dims=3, dropout_prob=0.5, npart= 2, id_skip=True, 
-                        pre_act = True, norm = 'bn', layer_drop=0.1, num_conv=2)
+                        input_dims=3, dropout_prob=0.5, npart= 2, id_skip=2, 
+                        pre_act = False, norm = 'bn', layer_drop=0.1, num_conv=2)
 #    net = Model_dense( 20, [40,40,80,80,192,192,320,320, 512], [512], output_classes=751, 
 #                     init_points = 512, input_dims=3, dropout_prob=0.5, npart= 1, id_skip=True, 
 #                     light=True, cluster='xyz', conv='SAGEConv', use_xyz=False)

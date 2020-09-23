@@ -279,7 +279,8 @@ if __name__ == "__main__":
                         help='Pretrained model path')
     parser.add_argument('--feature_dims',default='64,128,256,512', type=str,
                         help='64, 128, 256, 512 or 64, 128, 256, 512, 1024')
-    parser.add_argument('--id_skip', action='store_true')
+    parser.add_argument('--id_skip', type=int, default=0,
+                        help='0 is no id_skip, 1 is before msg, 2 is after msg')
     parser.add_argument('--efficient', action='store_true')
     parser.add_argument('--pre_act', action='store_true')
     parser.add_argument('--norm_layer', type=str, default='bn')
