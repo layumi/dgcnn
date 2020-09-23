@@ -78,11 +78,11 @@ def train(args, io):
     if args.use_sgd:
         print("Use SGD")
         opt = optim.SGD(model.parameters(), lr=args.lr*100, momentum=args.momentum, weight_decay=1e-4)
+        scheduler = CosineAnnealingLR(opt, args.epochs, eta_min=args.lr)
     else:
         print("Use Adam")
         opt = optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
-
-    scheduler = CosineAnnealingLR(opt, args.epochs, eta_min=args.lr)
+        scheduler = CosineAnnealingLR(opt, args.epochs, eta_min=0.01*args.lr)
     
     criterion = cal_loss
 
