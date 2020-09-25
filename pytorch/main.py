@@ -88,6 +88,9 @@ def train(args, io):
 
     best_test_acc = 0
     best_avg_per_class_acc = 0
+
+    warm_up = 0.1 # We start from the 0.1*lrRate
+    warm_iteration = round(len(ModelNet40(partition='train', num_points=args.num_points))/args.batch_size)*args.warm_epoch # first 5 epoch
     for epoch in range(args.epochs):
         scheduler.step()
         ####################
@@ -108,6 +111,9 @@ def train(args, io):
                 data = data.permute(0, 2, 1)
                 logits = model(data)
             loss = criterion(logits, label)
+            if epoch<args.warm_epoch: 
+                warm_up = min(1.0, warm_up + 0.9 / warm_iteration)
+                loss *= warm_up
             loss.backward()
             opt.step()
             preds = logits.max(dim=1)[1]
@@ -284,6 +290,7 @@ if __name__ == "__main__":
     parser.add_argument('--efficient', action='store_true')
     parser.add_argument('--pre_act', action='store_true')
     parser.add_argument('--norm_layer', type=str, default='bn')
+    parser.add_argument('--warm_epoch', default=0, type=int, help='the first K epoch that needs warm up')
     args = parser.parse_args()
 
     _init_()
